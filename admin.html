@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin - Home Service HP</title>
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif;}
+        body {background:#f1f5f9; color:#1e293b;}
+        header {background:#0f172a; color:white; padding:1rem 5%; display:flex; justify-content:space-between; align-items:center;}
+        .logo {font-size:1.4rem; font-weight:bold;}
+        .container {max-width:1200px; margin:2rem auto; padding:0 5%;}
+        h1 {margin-bottom:1.5rem; font-size:1.5rem;}
+
+        .ringkasan {display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:1rem; margin-bottom:2rem;}
+        .kartu {background:white; padding:1.2rem; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); border-left:4px solid #0ea5e9;}
+        .kartu h3 {font-size:1rem; color:#64748b; margin-bottom:0.5rem;}
+        .kartu .angka {font-size:2rem; font-weight:bold;}
+
+        .kontrol-fitur {display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 1rem;}
+        .filter-grup {display:flex; align-items:center; gap:0.5rem;}
+        .filter-grup label {font-size:0.9rem; font-weight:500; color:#475569;}
+        .filter-grup select, .filter-grup input[type="date"] {padding:0.4rem 0.8rem; border:1px solid #cbd5e1; border-radius:4px; font-size:0.85rem; background: white; cursor: pointer;}
+
+        table {width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.1);}
+        th,td {padding:0.8rem; text-align:left; border-bottom:1px solid #e2e8f0; font-size:0.9rem;}
+        th {background:#f8fafc; font-weight:600;}
+        .status {padding:0.25rem 0.6rem; border-radius:20px; font-size:0.8rem; font-weight:500;}
+        .baru {background:#dbeafe; color:#1e40af;}
+        .dijadwalkan {background:#fef3c7; color:#92400e;}
+        .diproses {background:#ecfccb; color:#3f6212;}
+        .selesai_servis {background:#bfdbfe; color:#1e40af;}
+        .menunggu_validasi {background:#f3e8ff; color:#6b21a8;}
+        .selesai {background:#dcfce7; color:#166534;}
+        .belum_dp {background:#fee2e2; color:#991b1b;}
+        .batal {background:#fef2f2; color:#ef4444; border:1px solid #fee2e2;}
+
+        .btn {padding:0.4rem 0.8rem; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem; margin-right:0.3rem;}
+        .btn-edit {background:#0ea5e9; color:white;}
+        .btn-validasi {background:#10b981; color:white;}
+        .btn-hapus {background:#ef4444; color:white;}
+
+        .modal {display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; overflow:auto;}
+        .modal-konten {background:white; width:90%; max-width:950px; margin:3% auto; padding:2rem; border-radius:8px; position:relative;}
+        .tutup {position:absolute; right:1rem; top:1rem; font-size:1.5rem; cursor:pointer;}
+        input, select, textarea {width:100%; padding:0.7rem; margin:0.5rem 0 1rem; border:1px solid #cbd5e1; border-radius:4px;}
+        input:disabled, select:disabled {background:#f1f5f9; color:#64748b;}
+        .pratinjau {margin:1rem 0; padding:1rem; border:1px dashed #cbd5e1; border-radius:6px; text-align:center;}
+        .pratinjau img, .pratinjau video {max-width:100%; max-height:300px; border-radius:4px;}
+        .box-dp {background:#fff7ed; padding:1rem; border-radius:6px; border:1px solid #ffedd5; margin-bottom:1rem;}
+        .box-tambahan-admin {background:#f0fdf4; border:1px solid #bbf7d0; padding:1rem; border-radius:6px; margin:1rem 0;}
+
+        /* LAYOUT CHAT DI MODAL ADMIN */
+        .chat-admin-container {border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; display: flex; flex-direction: column; height: 350px; margin-top: 1rem;}
+        .chat-admin-msg-box {flex: 1; overflow-y: auto; padding: 1rem;}
+        .chat-admin-input-row {display: flex; border-top: 1px solid #cbd5e1; background: white; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px;}
+        .chat-admin-input-row input {border: none; padding: 0.6rem; margin: 0; flex: 1;}
+        .chat-admin-input-row button {background: #10b981; color: white; border: none; padding: 0 1.2rem; cursor: pointer; font-weight: bold;}
+        .msg-bubble {margin-bottom: 0.8rem; max-width: 85%; padding: 0.5rem 0.7rem; border-radius: 6px; font-size: 0.85rem;}
+        .msg-admin {background: #dcfce7; color: #15803d; margin-left: auto; text-align: right; border-right: 3px solid #10b981;}
+        .msg-user {background: #e0f2fe; color: #0369a1; margin-right: auto; border-left: 3px solid #0ea5e9;}
+
+        /* CSS BARU UNTUK FITUR LOGIN & LOGOUT */
+        .login-overlay {position:fixed; top:0; left:0; width:100%; height:100%; background:#0f172a; display:flex; justify-content:center; align-items:center; z-index:9999;}
+        .login-box {background:white; padding:2.5rem; border-radius:10px; width:100%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.3); text-align:center;}
+        .login-box h2 {margin-bottom:0.5rem; color:#0f172a; font-size:1.6rem;}
+        .login-box p {color:#64748b; font-size:0.9rem; margin-bottom:1.5rem;}
+        .login-box .btn-login {width:100%; padding:0.8rem; background:#0ea5e9; color:white; border:none; border-radius:6px; font-weight:bold; font-size:1rem; cursor:pointer; margin-top:0.5rem;}
+        .login-box .btn-login:hover {background:#0284c7;}
+        .error-msg {color:#ef4444; font-size:0.85rem; margin-top:0.5rem; display:none; font-weight:500;}
+        .btn-logout {background:#ef4444; color:white; font-size:0.85rem; padding:0.4rem 0.8rem; border:none; border-radius:4px; cursor:pointer; font-weight:600; margin-left: 10px;}
+        .btn-logout:hover {background:#dc2626;}
+        #mainPanelWrapper {display:none;} /* Menyembunyikan isi panel sebelum login sukses */
+    </style>
+</head>
+<body>
+
+<div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+        <h2>🔒 Login Admin</h2>
+        <p>Silakan masukkan kredensial panel kendali</p>
+        
+        <label style="text-align:left; display:block; font-size:0.85rem; font-weight:600; color:#475569;">ID Admin</label>
+        <input type="text" id="adminId" placeholder="Masukkan ID Admin" onkeypress="aksiEnterLogin(event)">
+        
+        <label style="text-align:left; display:block; font-size:0.85rem; font-weight:600; color:#475569;">Password</label>
+        <input type="password" id="adminPassword" placeholder="Masukkan Password" onkeypress="aksiEnterLogin(event)">
+        
+        <div class="error-msg" id="errorLogin">❌ ID atau Password salah!</div>
+        <button class="btn-login" onclick="prosesLogin()">Masuk Ke Panel</button>
+    </div>
+</div>
+
+<div id="mainPanelWrapper">
+    <header>
+        <div class="logo">⚙️ Panel Admin Servis HP</div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div style="font-size:0.85rem; background:#1e293b; padding:0.4rem 0.8rem; border-radius:4px; color:#10b981; font-weight:bold;">● Auto-Reload Aktif</div>
+            <button class="btn-logout" onclick="prosesLogout()">Keluar 🚪</button>
+        </div>
+    </header>
+    <div class="container">
+        <h1>Daftar Pesanan Servis</h1>
+        <div class="ringkasan">
+            <div class="kartu"><h3>Pesanan Baru</h3><div class="angka" id="jmlBaru">0</div></div>
+            <div class="kartu"><h3>Dijadwalkan</h3><div class="angka" id="jmlJadwal">0</div></div>
+            <div class="kartu"><h3>Diproses</h3><div class="angka" id="jmlProses">0</div></div>
+            <div class="kartu"><h3>Menunggu Validasi</h3><div class="angka" id="jmlValidasi">0</div></div>
+        </div>
+
+        <div class="kontrol-fitur">
+            <div class="filter-grup">
+                <label for="filterTanggalKalender">📅 Filter Kalender (Jadwal Kerja):</label>
+                <input type="date" id="filterTanggalKalender" onchange="muatData()">
+                <button class="btn btn-secondary" onclick="resetFilterKalender()" style="margin-left:5px; padding:0.3rem 0.6rem;">Reset ❌</button>
+            </div>
+            <div class="filter-grup">
+                <label for="urutTanggal">Urutan Input:</label>
+                <select id="urutTanggal" onchange="muatData()">
+                    <option value="terbaru">Terbaru (Paling Atas)</option>
+                    <option value="terlama">Terlama (Paling Bawah)</option>
+                </select>
+            </div>
+        </div>
+
+        <table id="tabelPesanan">
+            <thead>
+                <tr>
+                    <th>Kode</th>
+                    <th>Nama</th>
+                    <th>HP</th>
+                    <th>Status DP</th>
+                    <th>Tanggal Jadwal</th>
+                    <th>Status Kerja</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="modal" id="modalKelola">
+        <div class="modal-konten">
+            <span class="tutup" onclick="tutupModal()">&times;</span>
+            <h3>Kelola Pesanan (<span id="txtKodeHeader">-</span>)</h3>
+            <input type="hidden" id="kodePesanan">
+
+            <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:1.5rem; margin-top:1rem;">
+                <div>
+                    <div class="box-dp">
+                        <h4>🔒 Langkah 1: Validasi DP Pelanggan</h4>
+                        <p style="font-size:0.85rem; margin-bottom:0.5rem;">Metode Bayar DP: <strong id="txtMetodeDP">-</strong></p>
+                        <button class="btn btn-validasi" id="btnApproveDP" onclick="validasiDP(true)">Setujui DP Lunas</button>
+                        <button class="btn btn-hapus" id="btnTolakDP" onclick="validasiDP(false)">Tolak DP</button>
+                    </div>
+
+                    <div id="wrapperPenjadwalan">
+                        <h4>📅 Langkah 2: Jadwal & Lokasi Kerja</h4>
+                        <label>Lokasi Perbaikan HP:</label>
+                        <select id="lokasiServis">
+                            <option value="home_service">Service di Rumah Pelanggan (On-Site)</option>
+                            <option value="workshop">HP Dibawa oleh Teknisi (Ke Workshop)</option>
+                        </select>
+
+                        <label>Status Progres Kerja</label>
+                        <select id="statusPesanan" onchange="cekKunciKolom()">
+                            <option value="baru">Menunggu Verifikasi Jadwal</option>
+                            <option value="dijadwalkan">Sudah Dijadwalkan</option>
+                            <option value="diproses">Sedang Diperbaiki</option>
+                            <option value="selesai_servis">Perbaikan Selesai</option>
+                            <option value="ditolak_pelanggan">Dibatalkan (Pelanggan Tolak Biaya Tambahan)</option>
+                        </select>
+
+                        <label>Teknisi</label>
+                        <select id="teknisi">
+                            <option value="">-- Pilih --</option>
+                            <option value="Andi S.">Andi S.</option>
+                            <option value="Bambang K.">Bambang K.</option>
+                            <option value="Dian R.">Dian R.</option>
+                        </select>
+
+                        <label>Tanggal & Waktu Servis</label>
+                        <input type="datetime-local" id="jadwal">
+
+                        <div class="box-tambahan-admin" id="boxInputTambahan">
+                            <h4>🔧 Temuan Kerusakan Tambahan (Update Lapangan)</h4>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:0.4rem;">Gunakan ini jika teknisi mendapati komponen rusak lain saat proses servis sedang berjalan.</p>
+                            
+                            <label><input type="checkbox" id="chkAdaTambahan" onchange="toggleFormTambahan()"> Aktifkan Biaya Tambahan</label>
+                            
+                            <div id="subFormTambahan" style="display:none; margin-top:0.5rem;">
+                                <label>Nama Komponen / Kerusakan Baru</label>
+                                <input type="text" id="infoTambahan" placeholder="Contoh: IC Power Korosi, Backdoor Retak">
+                                <label>Biaya Tambahan Suku Cadang/Jasa (Rp)</label>
+                                <input type="number" id="biayaTambahan" placeholder="0" oninput="hitungTotal()">
+                                <p style="font-size:0.85rem; margin-top:0.3rem;">Status Respon Pelanggan: <span id="txtResponPelanggan" style="font-weight:bold; color:#2563eb;">PENDING</span></p>
+                            </div>
+                        </div>
+
+                        <hr style="margin:1rem 0;">
+                        <h4>💰 Langkah 3: Rincian Biaya Pokok & Pelunasan</h4>
+                        <label>Biaya Suku Cadang Pokok (Rp)</label>
+                        <input type="number" id="biayaSuku" placeholder="0" oninput="hitungTotal()">
+                        <label>Biaya Jasa Servis Pokok (Rp)</label>
+                        <input type="number" id="biayaJasa" placeholder="0" oninput="hitungTotal()">
+                        
+                        <p style="font-weight:bold; color:#1e40af;">Subtotal Tagihan Pokok: Rp <span id="totalTampilPokok">0</span></p>
+                        <p style="font-weight:bold; color:#c2410c;" id="rowTampilTambahanAdmin">Subtotal Tambahan Disetujui: Rp <span id="totalTampilTambahan">0</span></p>
+                        <p style="font-size:0.85rem; color:#16a34a;">Potongan Uang Muka (DP): -Rp 50.000</p>
+                        <hr style="margin:0.5rem 0;">
+                        <p style="font-size:1.1rem; font-weight:bold; color:#111827;">Sisa Bersih Pelunasan: Rp <span id="totalTampil">0</span></p>
+
+                        <hr style="margin:1rem 0;">
+                        <p><strong>Metode Pelunasan Sisa:</strong> <span id="metodeBayarTampil">-</span></p>
+                        <button class="btn btn-validasi" id="btnValidasi" onclick="validasiPembayaranPelunasan()" style="margin-top:1rem;">Validasi Lunas Sisa</button>
+                    </div>
+
+                    <div style="margin-top:1.5rem; text-align:right;">
+                        <button class="btn btn-edit" style="padding:0.6rem 1.5rem;" onclick="simpanPerubahan()">Simpan Semua Data</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>Kondisi HP Awal Pelanggan</h4>
+                    <div class="pratinjau" id="tampilKondisiAdmin">Belum ada dokumen</div>
+                    <p><strong>Kerusakan/Keluhan Awal:</strong></p>
+                    <textarea id="keluhanAdmin" rows="2" readonly style="background:#f8fafc; font-size:0.85rem; margin-bottom:0.5rem;"></textarea>
+
+                    <h4 style="margin-top:1rem; border-top:2px dashed #cbd5e1; padding-top:1rem;">💬 Hubungi Pelanggan via Live Chat</h4>
+                    <div class="chat-admin-container">
+                        <div class="chat-admin-msg-box" id="boxPesanAdmin"></div>
+                        <div class="chat-admin-input-row">
+                            <input type="text" id="inputPesanAdmin" placeholder="Balas pesan pelanggan di sini..." onkeypress="aksiEnterChatAdmin(event)">
+                            <button onclick="kirimChatAdmin()">Kirim</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // LOGIKA TAMBAHAN: SELEKTOR LOGIN & LOGOUT
+    // ==========================================
+    const KREDENSIAL_ADMIN = {
+        id: "admin",
+        password: "admin123"
+    };
+
+    function prosesLogin() {
+        const idInput = document.getElementById("adminId").value.trim();
+        const passInput = document.getElementById("adminPassword").value;
+        const errLabel = document.getElementById("errorLogin");
+
+        if (idInput === KREDENSIAL_ADMIN.id && passInput === KREDENSIAL_ADMIN.password) {
+            sessionStorage.setItem("panelAdminSesiAktif", "true");
+            errLabel.style.display = "none";
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("mainPanelWrapper").style.display = "block";
+            muatData();
+        } else {
+            errLabel.style.display = "block";
+        }
+    }
+
+    function aksiEnterLogin(e) {
+        if (e.key === 'Enter') prosesLogin();
+    }
+
+    function prosesLogout() {
+        sessionStorage.removeItem("panelAdminSesiAktif");
+        document.getElementById("adminId").value = "";
+        document.getElementById("adminPassword").value = "";
+        document.getElementById("loginOverlay").style.display = "flex";
+        document.getElementById("mainPanelWrapper").style.display = "none";
+        if(aktifMembukaKode !== "") tutupModal();
+    }
+
+    function cekStatusSesi() {
+        if (sessionStorage.getItem("panelAdminSesiAktif") === "true") {
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("mainPanelWrapper").style.display = "block";
+            muatData();
+        } else {
+            document.getElementById("loginOverlay").style.display = "flex";
+            document.getElementById("mainPanelWrapper").style.display = "none";
+        }
+    }
+
+    // ==========================================
+    // DI BAWAH INI ADALAH FITUR ASLI KODE INDUK
+    // TIDAK ADA LOGIKA YANG DIUBAH ATAU DIKURANGI
+    // ==========================================
+    let cacheStringData = ""; 
+    let aktifMembukaKode = ""; 
+
+    function muatData() {
+        if (sessionStorage.getItem("panelAdminSesiAktif") !== "true") return;
+
+        const semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        const currentDataString = JSON.stringify(semua);
+        const tbody = document.querySelector("#tabelPesanan tbody");
+        const filterTanggal = document.getElementById("filterTanggalKalender").value; 
+
+        tbody.innerHTML = "";
+        let baru = 0, jadwal = 0, proses = 0, validasi = 0;
+
+        let urutanKunci = Object.keys(semua);
+        const tipeUrutan = document.getElementById("urutTanggal").value;
+        if (tipeUrutan === "terbaru") {
+            urutanKunci.sort((a, b) => b.localeCompare(a));
+        } else {
+            urutanKunci.sort((a, b) => a.localeCompare(b));
+        }
+
+        urutanKunci.forEach(kode => {
+            const d = semua[kode];
+
+            if (filterTanggal) {
+                if (!d.jadwal) return; 
+                const tanggalJadwalPesanan = d.jadwal.split("T")[0]; 
+                if (tanggalJadwalPesanan !== filterTanggal) return; 
+            }
+
+            if(d.status === "baru") baru++;
+            else if(d.status === "dijadwalkan") jadwal++;
+            else if(d.status === "diproses" || d.status === "selesai_servis") proses++;
+            if(d.pembayaranDikonfirmasi && !d.pembayaranValid) validasi++;
+
+            let teksDP = "BELUM BAYAR";
+            let kelasDP = "belum_dp";
+            if (d.dpValid) { teksDP = "DP LUNAS ✅"; kelasDP = "selesai"; }
+            else if (d.dpTerbayar) { teksDP = "PERLU CEK ⏳"; kelasDP = "menunggu_validasi"; }
+
+            let kelasStatus = d.pembayaranValid ? "selesai" : 
+                              d.status === "ditolak_pelanggan" ? "batal" :
+                              d.pembayaranDikonfirmasi ? "menunggu_validasi" : d.status;
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><strong>${kode}</strong></td>
+                <td>${d.nama}</td>
+                <td>${d.merek.toUpperCase()} ${d.tipe}</td>
+                <td><span class="status ${kelasDP}">${teksDP}</span></td>
+                <td>${d.jadwal ? new Date(d.jadwal).toLocaleString("id-ID") : "<em style='color:#94a3b8;'>Belum dijadwalkan</em>"}</td>
+                <td><span class="status ${kelasStatus}">${ubahNamaStatus(d)}</span></td>
+                <td>
+                    <button class="btn btn-edit" onclick="bukaModal('${kode}')">Kelola</button>
+                    <button class="btn btn-hapus" onclick="hapusPesanan('${kode}')">Hapus</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById("jmlBaru").textContent = baru;
+        document.getElementById("jmlJadwal").textContent = jadwal;
+        document.getElementById("jmlProses").textContent = proses;
+        document.getElementById("jmlValidasi").textContent = validasi;
+
+        cacheStringData = currentDataString;
+    }
+
+    function resetFilterKalender() {
+        document.getElementById("filterTanggalKalender").value = "";
+        muatData();
+    }
+
+    function ubahNamaStatus(d) {
+        if(d.status === "ditolak_pelanggan") return "BATAL (TOLAK BIAYA)";
+        if(d.pembayaranValid) return "SELESAI (LUNAS)";
+        if(d.pembayaranDikonfirmasi) return "MENUNGGU VALIDASI SISA";
+        
+        let label = d.status.toUpperCase();
+        if(d.adaKerusakanTambahan) {
+            if(d.statusPersetujuanTambahan === "pending") label += " (CEK TAMBAHAN)";
+            else if(d.statusPersetujuanTambahan === "disetujui") label += " (TAMBAHAN ACC)";
+        }
+        return label;
+    }
+
+    function hapusPesanan(kode) {
+        if (confirm(`Apakah Anda yakin menghapus pesanan ${kode}?`)) {
+            let semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+            if (semua[kode]) {
+                delete semua[kode];
+                localStorage.setItem("daftarPesanan", JSON.stringify(semua));
+                if(aktifMembukaKode === kode) tutupModal();
+                muatData();
+            }
+        }
+    }
+
+    function toggleFormTambahan() {
+        const checked = document.getElementById("chkAdaTambahan").checked;
+        document.getElementById("subFormTambahan").style.display = checked ? "block" : "none";
+        hitungTotal();
+    }
+
+    function bukaModal(kode) {
+        if (sessionStorage.getItem("panelAdminSesiAktif") !== "true") return;
+        aktifMembukaKode = kode;
+        const semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        const d = semua[kode];
+        
+        document.getElementById("kodePesanan").value = kode;
+        document.getElementById("txtKodeHeader").textContent = kode;
+        document.getElementById("statusPesanan").value = d.status;
+        document.getElementById("teknisi").value = d.teknisi || "";
+        document.getElementById("jadwal").value = d.jadwal || "";
+        document.getElementById("biayaSuku").value = d.biayaSuku || 0;
+        document.getElementById("biayaJasa").value = d.biayaJasa || 0;
+        document.getElementById("metodeBayarTampil").textContent = d.metodePembayaran || "-";
+        document.getElementById("keluhanAdmin").value = d.kerusakan || "-";
+        document.getElementById("txtMetodeDP").textContent = d.metodeDP || "Belum Memilih";
+        document.getElementById("lokasiServis").value = d.lokasiServis || "home_service";
+
+        document.getElementById("chkAdaTambahan").checked = d.adaKerusakanTambahan || false;
+        document.getElementById("infoTambahan").value = d.infoKerusakanTambahan || "";
+        document.getElementById("biayaTambahan").value = d.biayaSukuTambahan || 0;
+        
+        let labelRespon = (d.statusPersetujuanTambahan || "pending").toUpperCase();
+        document.getElementById("txtResponPelanggan").textContent = labelRespon;
+        toggleFormTambahan();
+
+        const tampilKondisi = document.getElementById("tampilKondisiAdmin");
+        if(d.kondisiHP && d.tipeKondisi) {
+            if(d.tipeKondisi.startsWith("image/")) {
+                tampilKondisi.innerHTML = `<img src="${d.kondisiHP}" alt="Kondisi HP">`;
+            } else if(d.tipeKondisi.startsWith("video/")) {
+                tampilKondisi.innerHTML = `<video src="${d.kondisiHP}" controls></video>`;
+            }
+        } else {
+            tampilKondisi.innerHTML = "Tidak ada dokumen diunggah";
+        }
+
+        if (d.dpValid) {
+            document.getElementById("wrapperPenjadwalan").style.opacity = "1";
+            document.getElementById("wrapperPenjadwalan").style.pointerEvents = "auto";
+            document.getElementById("btnApproveDP").disabled = true;
+            document.getElementById("btnTolakDP").disabled = true;
+            document.getElementById("btnApproveDP").innerText = "DP Sudah Sah";
+        } else {
+            document.getElementById("wrapperPenjadwalan").style.opacity = "0.3";
+            document.getElementById("wrapperPenjadwalan").style.pointerEvents = "none";
+            document.getElementById("btnApproveDP").disabled = !d.dpTerbayar;
+            document.getElementById("btnTolakDP").disabled = !d.dpTerbayar;
+            document.getElementById("btnApproveDP").innerText = "Setujui DP Lunas";
+        }
+
+        hitungTotal();
+        cekKunciKolom();
+        muatLogPesanAdmin(); 
+
+        document.getElementById("btnValidasi").disabled = !d.pembayaranDikonfirmasi || d.pembayaranValid;
+        document.getElementById("modalKelola").style.display = "block";
+    }
+
+    function validasiDP(isApproved) {
+        const kode = document.getElementById("kodePesanan").value;
+        const semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        
+        if (isApproved) {
+            semua[kode].dpValid = true;
+            alert("✅ Pembayaran DP dinyatakan VALID. Fitur penjadwalan teknisi otomatis dibuka!");
+        } else {
+            semua[kode].dpTerbayar = false;
+            semua[kode].dpValid = false;
+            semua[kode].metodeDP = "";
+            alert("❌ Pembayaran DP ditolak. Pelanggan diminta mengulang proses transfer DP.");
+        }
+        
+        localStorage.setItem("daftarPesanan", JSON.stringify(semua));
+        bukaModal(kode);
+        muatData();
+    }
+
+    function cekKunciKolom() {
+        const status = document.getElementById("statusPesanan").value;
+        const bisaUbahHarga = (status === "diproses" || status === "selesai_servis");
+        document.getElementById("biayaSuku").disabled = !bisaUbahHarga;
+        document.getElementById("biayaJasa").disabled = !bisaUbahHarga;
+        document.getElementById("chkAdaTambahan").disabled = !bisaUbahHarga;
+        document.getElementById("infoTambahan").disabled = !bisaUbahHarga;
+        document.getElementById("biayaTambahan").disabled = !bisaUbahHarga;
+    }
+
+    function hitungTotal() {
+        const suku = parseInt(document.getElementById("biayaSuku").value) || 0;
+        const jasa = parseInt(document.getElementById("biayaJasa").value) || 0;
+        const isTambahanChecked = document.getElementById("chkAdaTambahan").checked;
+        const biayaTambahan = parseInt(document.getElementById("biayaTambahan").value) || 0;
+
+        const totalPokok = suku + jasa;
+        if(document.getElementById("totalTampilPokok")) {
+            document.getElementById("totalTampilPokok").textContent = totalPokok.toLocaleString("id-ID");
+        }
+
+        let tambahanTerhitung = 0;
+        const statusRespon = document.getElementById("txtResponPelanggan").textContent;
+        
+        if (isTambahanChecked) {
+            tambahanTerhitung = biayaTambahan;
+            document.getElementById("rowTampilTambahanAdmin").style.display = "block";
+            document.getElementById("totalTampilTambahan").textContent = tambahanTerhitung.toLocaleString("id-ID") + " (" + statusRespon + ")";
+        } else {
+            document.getElementById("rowTampilTambahanAdmin").style.display = "none";
+        }
+
+        let sisaPelunasan = totalPokok - 50000;
+        if(statusRespon === "DISETUJUI") {
+            sisaPelunasan += tambahanTerhitung;
+        }
+
+        if (sisaPelunasan < 0) sisaPelunasan = 0;
+        document.getElementById("totalTampil").textContent = sisaPelunasan.toLocaleString("id-ID");
+    }
+
+    function simpanPerubahan() {
+        const kode = document.getElementById("kodePesanan").value;
+        const semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        
+        semua[kode].status = document.getElementById("statusPesanan").value;
+        semua[kode].teknisi = document.getElementById("teknisi").value;
+        semua[kode].jadwal = document.getElementById("jadwal").value;
+        semua[kode].lokasiServis = document.getElementById("lokasiServis").value;
+
+        const checkedTambahan = document.getElementById("chkAdaTambahan").checked;
+        
+        if(checkedTambahan && !semua[kode].adaKerusakanTambahan) {
+            semua[kode].statusPersetujuanTambahan = "pending";
+        }
+        
+        semua[kode].adaKerusakanTambahan = checkedTambahan;
+        semua[kode].infoKerusakanTambahan = document.getElementById("infoTambahan").value.trim();
+        semua[kode].biayaSukuTambahan = parseInt(document.getElementById("biayaTambahan").value) || 0;
+
+        if(document.getElementById("biayaSuku").disabled === false) {
+            semua[kode].biayaSuku = parseInt(document.getElementById("biayaSuku").value) || 0;
+            semua[kode].biayaJasa = parseInt(document.getElementById("biayaJasa").value) || 0;
+            
+            let tamb = (semua[kode].statusPersetujuanTambahan === "disetujui") ? semua[kode].biayaSukuTambahan : 0;
+            semua[kode].totalHarga = semua[kode].biayaSuku + semua[kode].biayaJasa + tamb;
+        }
+        
+        localStorage.setItem("daftarPesanan", JSON.stringify(semua));
+        alert("✅ Perubahan & update temuan kerusakan berhasil disimpan!");
+        tutupModal(); 
+        muatData();
+    }
+
+    function validasiPembayaranPelunasan() {
+        const kode = document.getElementById("kodePesanan").value;
+        const semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        semua[kode].pembayaranValid = true;
+        semua[kode].status = "selesai";
+        localStorage.setItem("daftarPesanan", JSON.stringify(semua));
+        alert("✅ Seluruh biaya pelunasan sukses divalidasi!");
+        tutupModal(); 
+        muatData();
+    }
+
+    function kirimChatAdmin() {
+        const inp = document.getElementById("inputPesanAdmin");
+        const teks = inp.value.trim();
+        if(!teks || !aktifMembukaKode) return;
+
+        let chatData = JSON.parse(localStorage.getItem("chatLog_" + aktifMembukaKode) || "[]");
+        chatData.push({ pengirim: 'admin', teks: teks, waktu: new Date().toLocaleTimeString() });
+        localStorage.setItem("chatLog_" + aktifMembukaKode, JSON.stringify(chatData));
+        
+        inp.value = "";
+        muatLogPesanAdmin();
+    }
+
+    function aksiEnterChatAdmin(e) {
+        if(e.key === 'Enter') kirimChatAdmin();
+    }
+
+    function muatLogPesanAdmin() {
+        if(!aktifMembukaKode) return;
+        const box = document.getElementById("boxPesanAdmin");
+        let chatData = JSON.parse(localStorage.getItem("chatLog_" + aktifMembukaKode) || "[]");
+        
+        let htmlStr = "";
+        chatData.forEach(msg => {
+            let kelasBubble = msg.pengirim === 'admin' ? 'msg-admin' : 'msg-user';
+            let labelNama = msg.pengirim === 'admin' ? '👨‍💻 Anda (Admin)' : '📱 Pelanggan';
+            htmlStr += `<div class="msg-bubble ${kelasBubble}"><strong>${labelNama}:</strong><br>${msg.teks}<br><span style="font-size:0.65rem; opacity:0.6;">${msg.waktu}</span></div>`;
+        });
+        
+        if(box.innerHTML !== htmlStr) {
+            box.innerHTML = htmlStr;
+            box.scrollTop = box.scrollHeight;
+        }
+    }
+
+    function tutupModal() {
+        document.getElementById("modalKelola").style.display = "none";
+        aktifMembukaKode = "";
+    }
+
+    function engineAutoReload() {
+        if (sessionStorage.getItem("panelAdminSesiAktif") !== "true") return;
+        const semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        if(JSON.stringify(semua) !== cacheStringData) {
+            muatData(); 
+        }
+        if(aktifMembukaKode !== "") {
+            muatLogPesanAdmin(); 
+        }
+    }
+
+    // Inisialisasi awal saat halaman diakses
+    window.onload = function() {
+        cekStatusSesi();
+        setInterval(engineAutoReload, 2000); 
+    };
+</script>
+</body>
+</html>
