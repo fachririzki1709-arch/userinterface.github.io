@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servis HP Online</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', sans-serif;}
+        body {background:#f8fafc; color:#1e293b; line-height:1.6;}
+        header {background:#0f172a; color:white; padding:1rem 5%; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;}
+        .logo {font-size:1.4rem; font-weight:bold;}
+        nav a {color:white; text-decoration:none; margin-left:1.2rem;}
+        nav a:hover {color:#38bdf8;}
+        .container {max-width:900px; margin:2rem auto; padding:0 5%;}
+
+        .progress-container {display:flex; justify-content:space-between; background:white; padding:1.2rem; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); margin-bottom:2rem; overflow-x:auto;}
+        .step-item {text-align:center; flex:1; min-width:70px; position:relative;}
+        .step-item:not(:last-child)::after {content:''; position:absolute; top:20px; left:50%; width:100%; height:2px; background:#e2e8f0; z-index:1;}
+        .step-number {width:40px; height:40px; line-height:40px; margin:0 auto 6px; border-radius:50%; background:#e2e8f0; font-weight:bold; position:relative; z-index:2;}
+        .step-item.active .step-number {background:#0ea5e9; color:white;}
+        .step-item.completed .step-number {background:#10b981; color:white;}
+        .step-text {font-size:0.8rem; color:#64748b;}
+
+        .content-box {background:white; padding:1.8rem; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); border-left:4px solid #0ea5e9; margin-bottom:2rem; display:none;}
+        .content-box.active {display:block; animation:fade 0.4s;}
+        @keyframes fade {from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+
+        .layanan-item {display:flex; justify-content:space-between; align-items:center; padding:0.8rem; margin:0.6rem 0; border:1px solid #e2e8f0; border-radius:6px;}
+        .harga {font-weight:bold; color:#0369a1;}
+        .info {padding:0.8rem; border-radius:6px; margin:1rem 0; font-size:0.9rem;}
+        .catatan {background:#f0f9ff; color:#075985;}
+        .rekening-box {background:#fffbeb; padding:1rem; border-radius:6px; margin:1rem 0; border-left:4px solid #f59e0b; display:none;}
+        .jadwal-box {background:#fef3c7; padding:1rem; border-radius:6px; margin:1rem 0; border-left:4px solid #d97706;}
+        .harga-final {background:#dbeafe; padding:1rem; border-radius:6px; margin:1rem 0; border-left:4px solid #1e40af;}
+        .lacak-box {background:#f0fdf4; padding:1.2rem; border-radius:8px; margin:1rem 0; border-left:4px solid #166534;}
+        .status-bar {display:flex; justify-content:space-between; margin-top:1rem; flex-wrap:wrap;}
+        .status-dot {width:25px; height:25px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-size:0.8rem; margin:0 auto 5px;}
+        .status-dot.aktif {background:#f59e0b; color:white;}
+        .status-dot.selesai {background:#10b981; color:white;}
+
+        input, select, textarea {width:100%; padding:0.7rem; margin:0.5rem 0 1rem; border:1px solid #cbd5e1; border-radius:4px; font-size:1rem;}
+        input[type="file"] {padding:0.5rem; background:#f8fafc;}
+        .pratinjau {margin-top:1rem; padding:1rem; border:1px dashed #cbd5e1; border-radius:6px; text-align:center;}
+        .pratinjau img, .pratinjau video {max-width:100%; max-height:250px; border-radius:4px; margin-top:0.5rem;}
+        .metode-bayar {display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; margin:1rem 0;}
+        .metode-item {padding:0.8rem; border:2px solid #e2e8f0; border-radius:6px; text-align:center; cursor:pointer;}
+        .metode-item.terpilih {border-color:#10b981; background:#f0fdf4;}
+        .btn {padding:0.7rem 1.4rem; border:none; border-radius:4px; cursor:pointer; font-size:1rem; margin-right:0.6rem; margin-top:0.5rem;}
+        .btn-primary {background:#0ea5e9; color:white;}
+        .btn-secondary {background:#e2e8f0; color:#1e293b;}
+        .btn-success {background:#10b981; color:white;}
+        .btn-danger {background:#ef4444; color:white;}
+        .btn-pdf {background:#dc2626; color:white;}
+        .btn-home {background:#475569; color:white;}
+
+        .faktur {border:2px solid #1e40af; padding:1.5rem; border-radius:8px; margin-top:1.5rem; background:#ffffff;}
+        .faktur h4 {text-align:center; margin-bottom:1rem; color:#1e40af; font-size:1.3rem;}
+        .faktur .baris {display:flex; justify-content:space-between; margin:0.5rem 0; padding:0.3rem 0; border-bottom:1px dotted #e2e8f0;}
+        .faktur .total {font-weight:bold; font-size:1.1rem; margin-top:1rem; padding-top:0.8rem; border-top:2px solid #cbd5e1;}
+        .faktur .catatan {margin-top:1.5rem; text-align:center; font-size:0.9rem; color:#64748b;}
+        .tombol-faktur {display:flex; gap:1rem; margin-top:1.5rem; justify-content:center; flex-wrap:wrap;}
+        .alert-bahaya {background:#fef2f2; color:#991b1b; border-left:4px solid #ef4444; padding:1rem; border-radius:6px; margin:1rem 0;}
+        .alert-warning-box {background:#fff7ed; color:#c2410c; border-left:4px solid #f97316; padding:1.2rem; border-radius:6px; margin:1rem 0;}
+
+        .chat-widget {background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 2rem;}
+        .chat-header {background: #0f172a; color: white; padding: 0.8rem 1rem; border-top-left-radius: 7px; border-top-right-radius: 7px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;}
+        .chat-messages {height: 200px; overflow-y: auto; padding: 1rem; background: #f8fafc;}
+        .msg-bubble {margin-bottom: 0.8rem; max-width: 80%; padding: 0.6rem 0.8rem; border-radius: 6px; font-size: 0.9rem; line-height: 1.4;}
+        .msg-admin {background: #e2e8f0; color: #1e293b; margin-right: auto; border-left: 3px solid #64748b;}
+        .msg-user {background: #e0f2fe; color: #0369a1; margin-left: auto; text-align: right; border-right: 3px solid #0ea5e9;}
+        .chat-input-row {display: flex; border-top: 1px solid #cbd5e1;}
+        .chat-input-row input {border: none; border-radius: 0; padding: 0.8rem; margin: 0; flex: 1;}
+        .chat-input-row button {background: #0ea5e9; color: white; border: none; padding: 0 1.2rem; cursor: pointer; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">📱 Servis HP Online</div>
+    <nav>
+        <a href="#pesan" onclick="kembaliKeAwal()">Buat Pesanan Baru</a>
+        <a href="#lacak" onclick="tanyaKodeLacak()">Lacak Pesanan Saya</a>
+    </nav>
+</header>
+
+<div class="container">
+    <div class="progress-container">
+        <div class="step-item active" data-step="1"><div class="step-number">1</div><div class="step-text">Layanan</div></div>
+        <div class="step-item" data-step="2"><div class="step-number">2</div><div class="step-text">Data & HP</div></div>
+        <div class="step-item" data-step="3"><div class="step-number">3</div><div class="step-text">Bayar DP</div></div>
+        <div class="step-item" data-step="4"><div class="step-number">4</div><div class="step-text">Jadwal</div></div>
+        <div class="step-item" data-step="5"><div class="step-number">5</div><div class="step-text">Proses</div></div>
+        <div class="step-item" data-step="6"><div class="step-number">6</div><div class="step-text">Bayar Sisa</div></div>
+        <div class="step-item" data-step="7"><div class="step-number">7</div><div class="step-text">Selesai</div></div>
+    </div>
+
+    <!-- STEP 1: LAYANAN -->
+    <div class="content-box active" id="step-1">
+        <h2>Selamat Datang</h2>
+        <p>Layanan servis HP panggilan di seluruh wilayah Cianjur dan sekitarnya.</p>
+        <div class="info catatan"><strong>📌 Wilayah Layanan:</strong> Kota Cianjur & Kabupaten sekitar</div>
+
+        <h3>Pilih Layanan & Estimasi Harga:</h3>
+        <div class="layanan-item"><label><input type="checkbox" id="l1"> Ganti Layar</label><span class="harga">Rp 350rb - 1.8jt</span></div>
+        <div class="layanan-item"><label><input type="checkbox" id="l2"> Ganti Baterai</label><span class="harga">Rp 150rb - 650rb</span></div>
+        <div class="layanan-item"><label><input type="checkbox" id="l3"> Perbaikan Sistem</label><span class="harga">Rp 100rb - 300rb</span></div>
+        <div class="layanan-item"><label><input type="checkbox" id="l4"> Pembersihan Dalam</label><span class="harga">Rp 80rb - 200rb</span></div>
+        <div class="info catatan"><strong>ℹ️ Catatan:</strong> Harga final akan ditentukan setelah pengecekan teknisi.</div>
+        <button class="btn btn-primary" onclick="nextStep()">Lanjutkan ➡️</button>
+    </div>
+
+    <!-- STEP 2: DATA DIRI & HP -->
+    <div class="content-box" id="step-2">
+        <h3>Data Pemesanan & Kondisi HP</h3>
+        <label>Nama Lengkap</label><input type="text" id="nama" placeholder="Contoh: Budi Santoso">
+        <label>Nomor WhatsApp</label><input type="tel" id="wa" placeholder="0812xxxxxxx">
+        <label>Alamat Lengkap</label><textarea id="alamat" rows="2" placeholder="Jalan, Nomor, RT/RW, Kecamatan"></textarea>
+        <label>Merek HP</label>
+        <select id="merek">
+            <option value="">-- Pilih Merek --</option>
+            <option value="Samsung">Samsung</option>
+            <option value="Xiaomi">Xiaomi/Redmi/POCO</option>
+            <option value="OPPO">OPPO/Realme</option>
+            <option value="Vivo">Vivo</option>
+            <option value="iPhone">iPhone</option>
+            <option value="Lainnya">Lainnya</option>
+        </select>
+        
+        <!-- MENGUBAH SELECT TIPE HP MENJADI INPUT MANUAL -->
+        <label>Tipe HP</label>
+        <input type="text" id="tipe" placeholder="Contoh: Galaxy A54 / Redmi Note 13 Pro / iPhone 11">
+        
+        <label>Kerusakan / Keluhan</label><textarea id="kerusakan" rows="2" placeholder="Jelaskan kerusakan yang terjadi"></textarea>
+
+        <label>Unggah Kondisi HP (Gambar/Video)</label>
+        <input type="file" id="fileKondisi" accept="image/*,video/*" onchange="tampilPratinjau()">
+        <div class="pratinjau" id="pratinjauFile">Belum ada file dipilih</div>
+
+        <button class="btn btn-secondary" onclick="prevStep()">⬅️ Kembali</button>
+        <button class="btn btn-primary" onclick="kirimPesanan()">Kirim Pesanan</button>
+    </div>
+
+    <!-- STEP 3: BAYAR DP -->
+    <div class="content-box" id="step-3">
+        <h3>💳 Pembayaran Uang Muka (DP)</h3>
+        <p>Kode Pesanan: <strong id="kodePesananDP">-</strong></p>
+        <p>Untuk memproses pencarian dan pengiriman teknisi, silakan melakukan pembayaran DP sebesar: <strong style="color: #db2777; font-size: 1.2rem;">Rp 50.000</strong></p>
+        
+        <div class="alert-bahaya">
+            <strong>⚠️ KEBIJAKAN PEMBATALAN:</strong> Pembayaran Uang Muka (DP) ini bersifat <strong>Non-Refundable (Tidak dapat dikembalikan)</strong> dengan alasan apa pun.
+        </div>
+
+        <p>Pilih bank transfer DP:</p>
+        <div class="metode-bayar">
+            <div class="metode-item" onclick="pilihMetodeDP(this, 'Debit BCA')">Transfer BCA</div>
+            <div class="metode-item" onclick="pilihMetodeDP(this, 'Debit Mandiri')">Transfer Mandiri</div>
+            <div class="metode-item" onclick="pilihMetodeDP(this, 'Debit BRI')">Transfer BRI</div>
+        </div>
+
+        <div class="rekening-box" id="infoRekeningDP">
+            <p><strong>Nomor Rekening:</strong> <span id="noRekDP">-</span></p>
+            <p><strong>Atas Nama:</strong> SF Tech</p>
+            <p><strong>Bank:</strong> <span id="namaBankDP">-</span></p>
+        </div>
+
+        <p>Metode DP dipilih: <strong id="metodeDPDipilih">-</strong></p>
+        <button class="btn btn-success" id="btnKonfirmasiDP" onclick="konfirmasiBayarDP()">Konfirmasi Bayar DP</button>
+
+        <div class="info catatan" id="infoValidasiDP" style="display:none; margin-top:1rem; background: #fef3c7; border-left-color: #d97706; color: #92400e;">
+            <strong>⏳ Menunggu verifikasi pembayaran DP oleh admin. Penjadwalan teknisi akan dibuka setelah DP valid...</strong>
+        </div>
+        <button class="btn btn-primary" style="margin-top:1rem;" onclick="cekStatus()">Perbarui Status 🔄</button>
+    </div>
+
+    <!-- STEP 4: JADWAL -->
+    <div class="content-box" id="step-4">
+        <h3>📅 Jadwal & Lokasi Servis</h3>
+        <p>Kode Pesanan: <strong id="kodePesanan">-</strong></p>
+        <div id="infoJadwal">
+            <p>Status: Menunggu admin mengatur jadwal kunjungan teknisi.</p>
+        </div>
+        <div class="jadwal-box" id="tampilJadwal" style="display:none;">
+            <p><strong>Teknisi:</strong> <span id="teknisi">-</span></p>
+            <p><strong>Tanggal & Waktu:</strong> <span id="jadwal">-</span></p>
+            <p><strong>Lokasi Perbaikan HP:</strong> <span id="lokasiServisTampil" style="font-weight: bold; color: #1e40af;">-</span></p>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #475569;">* Note: Pastikan HP siap sedia pada waktu yang tertera.</p>
+        </div>
+        <button class="btn btn-primary" onclick="cekStatus()">Perbarui Status 🔄</button>
+    </div>
+
+    <!-- STEP 5: PROSES -->
+    <div class="content-box" id="step-5">
+        <h3>🔍 Proses Perbaikan</h3>
+        
+        <div id="boxKerusakanTambahan" class="alert-warning-box" style="display:none;">
+            <h4>⚠️ Temuan Kerusakan Tambahan oleh Teknisi!</h4>
+            <p style="margin-top: 0.5rem;">Teknisi kami menemukan kendala baru saat membongkar perangkat Anda:</p>
+            <p style="background: white; padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-weight: bold; border-left: 3px solid #f97316;" id="txtKerusakanTambahan">-</p>
+            <p>Ada penambahan biaya pengerjaan sebesar: <strong style="color:#c2410c; font-size:1.1rem;">Rp <span id="txtBiayaTambahan">0</span></strong></p>
+            
+            <div class="alert-bahaya" style="font-size:0.85rem; margin:0.8rem 0;">
+                If Anda <strong>MENOLAK</strong> pengerjaan tambahan ini, proses servis dihentikan dan <strong>Uang DP Anda hangus</strong>.
+            </div>
+            
+            <div style="margin-top:1rem;" id="aksiTambahan">
+                <button class="btn btn-success" onclick="responsTambahan(true)">👍 Setuju & Lanjutkan</button>
+                <button class="btn btn-danger" onclick="responsTambahan(false)">❌ Tolak (Batalkan Servis)</button>
+            </div>
+        </div>
+
+        <div class="lacak-box" id="mainLacakBox">
+            <p><strong>Status:</strong> <span id="statusSaatIni">Menunggu Konfirmasi</span></p>
+            <div class="status-bar">
+                <div><div class="status-dot selesai" id="s1">✓</div><div>Diterima</div></div>
+                <div><div class="status-dot" id="s2">✓</div><div>Jadwal Ditetapkan</div></div>
+                <div><div class="status-dot" id="s3">●</div><div>Sedang Diperbaiki</div></div>
+                <div><div class="status-dot" id="s4">●</div><div>Selesai Diperbaiki</div></div>
+            </div>
+
+            <div style="margin-top:1.5rem;">
+                <h4>Kondisi HP Awal:</h4>
+                <div class="pratinjau" id="tampilKondisiHP">Belum tersedia</div>
+            </div>
+        </div>
+        <div class="harga-final" id="tampilHarga" style="display:none;">
+            <h4>Rincian Biaya</h4>
+            <p>Biaya Suku Cadang: Rp <span id="biayaSuku">0</span></p>
+            <p>Biaya Jasa Servis: Rp <span id="biayaJasa">0</span></p>
+            <div id="rowBiayaTambahanFaktur" style="display:none; color: #c2410c;">
+                <p>Biaya Kerusakan Tambahan: +Rp <span id="biayaSukuTambahanTampil">0</span></p>
+            </div>
+            <p style="color: #15803d;">Uang Muka (DP): -Rp 50.000 (Sudah dibayar)</p>
+            <hr style="margin:0.8rem 0;">
+            <p style="font-size:1.3rem; font-weight:bold;">Sisa yang Harus Dibayar: Rp <span id="hargaFinal">0</span></p>
+        </div>
+        <button class="btn btn-primary" onclick="cekStatus()">Perbarui Status 🔄</button>
+    </div>
+
+    <!-- STEP 6: PELUNASAN -->
+    <div class="content-box" id="step-6">
+        <h3>💳 Pelunasan Pembayaran Sisa</h3>
+        <p>Sisa Pelunasan: <strong>Rp <span id="bayarTotal">0</span></strong></p>
+        <p>Pilih metode pembayaran:</p>
+
+        <div class="metode-bayar">
+            <div class="metode-item" onclick="pilihMetode(this, 'Tunai')">Tunai</div>
+            <div class="metode-item" onclick="pilihMetode(this, 'Debit BCA')">Transfer BCA</div>
+            <div class="metode-item" onclick="pilihMetode(this, 'Debit Mandiri')">Transfer Mandiri</div>
+            <div class="metode-item" onclick="pilihMetode(this, 'Debit BRI')">Transfer BRI</div>
+        </div>
+
+        <div class="rekening-box" id="infoRekening">
+            <p><strong>Nomor Rekening:</strong> <span id="noRek">-</span></p>
+            <p><strong>Atas Nama:</strong> SF Tech</p>
+            <p><strong>Bank:</strong> <span id="namaBank">-</span></p>
+        </div>
+
+        <p>Metode dipilih: <strong id="metodeDipilih">-</strong></p>
+        <button class="btn btn-success" id="btnKonfirmasi" onclick="konfirmasiBayar()">Konfirmasi Pembayaran</button>
+
+        <div class="info catatan" id="infoValidasi" style="display:none; margin-top:1rem;">
+            <strong>⏳ Menunggu validasi sisa pembayaran dari admin...</strong>
+        </div>
+    </div>
+
+    <!-- STEP 7: SELESAI -->
+    <div class="content-box" id="step-7">
+        <h3>✅ Pesanan Selesai</h3>
+        <p id="txtKeteranganSelesai">Pembayaran Anda telah divalidasi secara penuh. Terima kasih telah menggunakan layanan kami!</p>
+        <p style="color:#047857; margin-top:0.5rem;" id="txtGaransiLabel">Garansi servis berlaku selama 30 hari.</p>
+
+        <div class="faktur" id="fakturTampilan">
+            <h4>FAKTUR PEMBAYARAN SERVIS HP</h4>
+            <div class="baris"><span>No. Faktur</span><span id="noFaktur">-</span></div>
+            <div class="baris"><span>Kode Pesanan</span><span id="fakturKode">-</span></div>
+            <div class="baris"><span>Nama Pelanggan</span><span id="fakturNama">-</span></div>
+            <div class="baris"><span>Tanggal & Waktu</span><span id="fakturTanggal">-</span></div>
+            <div class="baris"><span>Jenis Layanan</span><span id="fakturLayanan">-</span></div>
+            <div class="baris"><span>Biaya Pokok (Suku Cadang + Jasa)</span><span id="fakturPokok">-</span></div>
+            <div class="baris" id="fakturRowTambahan" style="display:none; color:#c2410c;"><span>Biaya Kerusakan Tambahan</span><span id="fakturTambahanBiaya">-</span></div>
+            <div class="baris"><span>DP yang Dibayar</span><span>Rp 50.000</span></div>
+            <div class="baris"><span>Metode Pelunasan</span><span id="fakturMetode">-</span></div>
+            <div class="baris total"><span>TOTAL KESELURUHAN</span><span id="fakturTotal">-</span></div>
+            <div class="catatan" id="txtFakturNote">Terima kasih atas kepercayaan Anda kepada kami</div>
+        </div>
+
+        <div class="tombol-faktur">
+            <button class="btn btn-pdf" id="btnUnduhPDF" onclick="unduhPDF()">📄 Unduh sebagai PDF</button>
+            <button class="btn btn-home" onclick="kembaliKeAwal()">🏠 Kembali ke Halaman Awal (Buat Baru)</button>
+        </div>
+    </div>
+
+    <!-- WIDGET CHAT -->
+    <div class="chat-widget" id="chatWidgetPelanggan" style="display:none;">
+        <div class="chat-header">
+            <span>💬 Hubungi Admin (Pesan: <span id="txtChatKode">-</span>)</span>
+        </div>
+        <div class="chat-messages" id="boxPesanPelanggan"></div>
+        <div class="chat-input-row">
+            <input type="text" id="inputPesanPelanggan" placeholder="Ketik pesan ke admin di sini..." onkeypress="aksiEnterChat(event, 'pelanggan')">
+            <button onclick="kirimChat('pelanggan')">Kirim</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentStep = 1;
+    let kodeSaya = localStorage.getItem("kodeAktifPelanggan") || ""; 
+    let metodeBayar = "";
+    let metodeDP = "";
+    let fileDataURL = "";
+    let tipeFile = "";
+
+    const dataRekening = {
+        "Debit BCA": {no: "123.456.7890", bank: "Bank Central Asia"},
+        "Debit Mandiri": {no: "987.654.3210", bank: "Bank Mandiri"},
+        "Debit BRI": {no: "456.789.1230", bank: "Bank Rakyat Indonesia"},
+        "Tunai": {no: "-", bank: "-"}
+    };
+
+    // FUNGSI UPDATE TIPE DISEDERHANAKAN KARENA TIDAK DIGUNAKAN LAGI
+    function updateTipe() { }
+
+    function tampilPratinjau() {
+        const fileInput = document.getElementById("fileKondisi");
+        const pratinjau = document.getElementById("pratinjauFile");
+        const file = fileInput.files[0];
+
+        if(file) {
+            tipeFile = file.type;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fileDataURL = e.target.result;
+                if(tipeFile.startsWith("image/")) {
+                    pratinjau.innerHTML = `<img src="${fileDataURL}" alt="Pratinjau">`;
+                } else if(tipeFile.startsWith("video/")) {
+                    pratinjau.innerHTML = `<video src="${fileDataURL}" controls></video>`;
+                }
+            };
+            reader.readAsDataURL(file);
+        } else {
+            pratinjau.innerHTML = "Belum ada file dipilih";
+            fileDataURL = "";
+            tipeFile = "";
+        }
+    }
+
+    function updateProgress() {
+        document.querySelectorAll(".step-item").forEach((e,i) => {
+            const n = i+1;
+            e.classList.remove("active","completed");
+            n < currentStep ? e.classList.add("completed") : n === currentStep ? e.classList.add("active") : null;
+        });
+    }
+
+    function showContent() {
+        document.querySelectorAll(".content-box").forEach(e => e.classList.remove("active"));
+        document.getElementById(`step-${currentStep}`).classList.add("active");
+    }
+
+    function nextStep() { if(currentStep < 7) { currentStep++; updateProgress(); showContent(); } }
+    function prevStep() { if(currentStep > 1) { currentStep--; updateProgress(); showContent(); } }
+
+    function kirimPesanan() {
+        const layananTerpilih = Array.from(document.querySelectorAll("input[type=checkbox]:checked"))
+                                  .map(cb => cb.parentElement.textContent.trim())
+                                  .join(", ");
+
+        const data = {
+            nama: document.getElementById("nama").value.trim(),
+            wa: document.getElementById("wa").value.trim(),
+            alamat: document.getElementById("alamat").value.trim(),
+            merek: document.getElementById("merek").value,
+            tipe: document.getElementById("tipe").value.trim(), // MEMBACA NILAI DARI INPUT MANUAL
+            kerusakan: document.getElementById("kerusakan").value.trim(),
+            layanan: layananTerpilih || "Belum dipilih",
+            status: "baru",
+            teknisi: "",
+            jadwal: "",
+            biayaSuku: 0,
+            biayaJasa: 0,
+            totalHarga: 0,
+            metodePembayaran: "",
+            pembayaranDikonfirmasi: false,
+            pembayaranValid: false,
+            kondisiHP: fileDataURL || "",
+            tipeKondisi: tipeFile || "",
+            dpTerbayar: false,
+            dpValid: false,
+            metodeDP: "",
+            lokasiServis: "",
+            adaKerusakanTambahan: false,
+            infoKerusakanTambahan: "",
+            biayaSukuTambahan: 0,
+            statusPersetujuanTambahan: "pending",
+            tanggalInput: new Date().toISOString().split('T')[0]
+        };
+
+        if (!data.nama || !data.wa || !data.merek || !data.tipe) {
+            alert("❌ Lengkapi semua data wajib: Nama, WA, Merek & Tipe HP!");
+            return;
+        }
+
+        kodeSaya = "HS-" + new Date().toISOString().slice(0,10).replace(/-/g,"") + "-" + Math.floor(Math.random()*900+100);
+
+        let semuaPesanan = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        semuaPesanan[kodeSaya] = data;
+        localStorage.setItem("daftarPesanan", JSON.stringify(semuaPesanan));
+
+        localStorage.setItem("kodeAktifPelanggan", kodeSaya);
+
+        document.getElementById("kodePesananDP").textContent = kodeSaya;
+        document.getElementById("kodePesanan").textContent = kodeSaya;
+        
+        aktifkanSistemChat();
+        alert("✅ Pesanan terkirim! Silakan lanjut ke langkah pengamanan Pembayaran DP.");
+        
+        cekStatus();
+    }
+
+    function pilihMetodeDP(element, nama) {
+        metodeDP = nama;
+        document.querySelectorAll("#step-3 .metode-item").forEach(el => el.classList.remove("terpilih"));
+        element.classList.add("terpilih");
+        document.getElementById("metodeDPDipilih").textContent = nama;
+
+        const rek = dataRekening[nama];
+        document.getElementById("noRekDP").textContent = rek.no;
+        document.getElementById("namaBankDP").textContent = rek.bank;
+        document.getElementById("infoRekeningDP").style.display = "block";
+    }
+
+    function konfirmasiBayarDP() {
+        if(!metodeDP) return alert("Pilih metode transfer DP terlebih dahulu!");
+        let semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        semua[kodeSaya].metodeDP = metodeDP;
+        semua[kodeSaya].dpTerbayar = true;
+        localStorage.setItem("daftarPesanan", JSON.stringify(semua));
+        alert("✅ Konfirmasi DP tersimpan. Silakan tunggu validasi admin sebelum penjadwalan.");
+        cekStatus();
+    }
+
+    function tanyaKodeLacak() {
+        const kode = prompt("Masukkan Kode Pesanan Anda:");
+        if(kode) {
+            let semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+            if(semua[kode]) {
+                kodeSaya = kode;
+                
+                localStorage.setItem("kodeAktifPelanggan", kodeSaya);
+                
+                document.getElementById("kodePesananDP").textContent = kodeSaya;
+                document.getElementById("kodePesanan").textContent = kodeSaya;
+                
+                aktifkanSistemChat();
+                cekStatus();
+            } else {
+                alert("❌ Kode pesanan tidak ditemukan!");
+            }
+        }
+    }
+
+    function responsTambahan(setuju) {
+        let semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        if(!semua[kodeSaya]) return;
+
+        if (setuju) {
+            semua[kodeSaya].statusPersetujuanTambahan = "disetujui";
+            alert("✅ Anda menyetujui pengerjaan tambahan. Teknisi akan melanjutkan proses perbaikan.");
+        } else {
+            semua[kodeSaya].statusPersetujuanTambahan = "ditolak";
+            semua[kodeSaya].status = "ditolak_pelanggan";
+            alert("❌ Anda menolak pengerjaan tambahan. Sesuai ketentuan, pesanan dibatalkan & uang DP hangus.");
+        }
+        localStorage.setItem("daftarPesanan", JSON.stringify(semua));
+        cekStatus();
+    }
+
+    function cekStatus() {
+        if(!kodeSaya) return; 
+        let semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        const data = semua[kodeSaya];
+        
+        if(!data) {
+            kembaliKeAwal();
+            return;
+        }
+
+        const boxTambahan = document.getElementById("boxKerusakanTambahan");
+        if (data.adaKerusakanTambahan && data.statusPersetujuanTambahan === "pending" && data.status !== "ditolak_pelanggan") {
+            boxTambahan.style.display = "block";
+            document.getElementById("txtKerusakanTambahan").textContent = data.infoKerusakanTambahan;
+            document.getElementById("txtBiayaTambahan").textContent = data.biayaSukuTambahan.toLocaleString("id-ID");
+        } else if (data.adaKerusakanTambahan && data.statusPersetujuanTambahan === "disetujui") {
+            boxTambahan.style.display = "block";
+            document.getElementById("txtKerusakanTambahan").textContent = data.infoKerusakanTambahan;
+            document.getElementById("txtBiayaTambahan").textContent = data.biayaSukuTambahan.toLocaleString("id-ID");
+            document.getElementById("aksiTambahan").innerHTML = "<p style='color:#16a34a; font-weight:bold;'>✓ Anda telah menyetujui biaya tambahan ini.</p>";
+        } else {
+            boxTambahan.style.display = "none";
+        }
+
+        const tampilKondisi = document.getElementById("tampilKondisiHP");
+        if(data.kondisiHP && data.tipeKondisi) {
+            if(data.tipeKondisi.startsWith("image/")) {
+                tampilKondisi.innerHTML = `<img src="${data.kondisiHP}" alt="Kondisi HP" style="max-width:100%;">`;
+            } else if(data.tipeKondisi.startsWith("video/")) {
+                tampilKondisi.innerHTML = `<video src="${data.kondisiHP}" controls style="max-width:100%;"></video>`;
+            }
+        }
+
+        let targetStep = currentStep;
+        if (currentStep === 7) {
+            isiDataFaktur(data);
+            return;
+        }
+
+        if (data.status === "ditolak_pelanggan") {
+            currentStep = 7;
+            updateProgress();
+            showContent();
+            isiDataFaktur(data);
+            return;
+        }
+
+        if (!data.dpValid) {
+            targetStep = 3;
+            if (data.dpTerbayar) {
+                const infoValDP = document.getElementById("infoValidasiDP");
+                infoValDP.style.display = "block";
+                document.getElementById("btnKonfirmasiDP").disabled = true;
+                document.getElementById("btnKonfirmasiDP").innerText = "Menunggu Validasi Admin";
+            }
+        } 
+        else if (data.dpValid && data.status === "baru") {
+            targetStep = 4;
+            document.getElementById("infoJadwal").innerHTML = "<p style='color:#15803d; font-weight:bold;'>✓ DP Terverifikasi Lunas! Menunggu admin mengatur nama teknisi, tanggal visit, dan lokasi servis.</p>";
+            document.getElementById("tampilJadwal").style.display = "none";
+        }
+        else if (data.status === "dijadwalkan") {
+            targetStep = 4;
+            document.getElementById("teknisi").textContent = data.teknisi;
+            document.getElementById("jadwal").textContent = data.jadwal ? new Date(data.jadwal).toLocaleString("id-ID") : "-";
+            document.getElementById("lokasiServisTampil").textContent = data.lokasiServis === "home_service" ? "Servis di Rumah Pelanggan (On-Site)" : "HP Dibawa oleh Teknisi ke Workshop";
+            document.getElementById("tampilJadwal").style.display = "block";
+            document.getElementById("infoJadwal").style.display = "none";
+        }
+        else if (data.status === "diproses") {
+            targetStep = 5;
+            document.getElementById("statusSaatIni").textContent = "Sedang Diperbaiki";
+            document.getElementById("s2").className = "status-dot selesai";
+            document.getElementById("s3").className = "status-dot aktif";
+            sinkronBiayaTampil(data);
+        }
+        else if (data.status === "selesai_servis") {
+            targetStep = 6;
+            sinkronBiayaTampil(data);
+        }
+        else if (data.status === "selesai" || data.pembayaranValid === true) {
+            targetStep = 6;
+            const infoValidasi = document.getElementById("infoValidasi");
+            infoValidasi.style.display = "block";
+            infoValidasi.style.backgroundColor = "#dcfce7";
+            infoValidasi.style.color = "#15803d";
+            infoValidasi.style.borderLeft = "4px solid #16a34a";
+            infoValidasi.innerHTML = `
+                <strong>🎉 Pelunasan Terverifikasi!</strong><br>
+                Admin memvalidasi seluruh pembayaran Anda. Silakan klik tombol dibawah untuk melihat faktur.<br>
+                <button class="btn btn-success" onclick="bukaHalamanFaktur()" style="margin-top: 0.8rem; background: #16a34a;">📄 Lihat & Cetak Faktur</button>
+            `;
+            document.getElementById("btnKonfirmasi").disabled = true;
+            document.getElementById("btnKonfirmasi").innerText = "Lunas";
+            sinkronBiayaTampil(data);
+        }
+
+        if(targetStep !== currentStep) {
+            currentStep = targetStep;
+            updateProgress();
+            showContent();
+        }
+        muatLogPesan(); 
+    }
+
+    function sinkronBiayaTampil(data) {
+        document.getElementById("biayaSuku").textContent = data.biayaSuku.toLocaleString("id-ID");
+        document.getElementById("biayaJasa").textContent = data.biayaJasa.toLocaleString("id-ID");
+        
+        let tambahan = (data.adaKerusakanTambahan && data.statusPersetujuanTambahan === "disetujui") ? data.biayaSukuTambahan : 0;
+        if(tambahan > 0) {
+            document.getElementById("biayaSukuTambahanTampil").textContent = tambahan.toLocaleString("id-ID");
+            document.getElementById("rowBiayaTambahanFaktur").style.display = "block";
+        } else {
+            document.getElementById("rowBiayaTambahanFaktur").style.display = "none";
+        }
+
+        let sisaBayar = (data.biayaSuku + data.biayaJasa + tambahan) - 50000;
+        if(sisaBayar < 0) sisaBayar = 0;
+
+        document.getElementById("hargaFinal").textContent = sisaBayar.toLocaleString("id-ID");
+        document.getElementById("bayarTotal").textContent = sisaBayar.toLocaleString("id-ID");
+        document.getElementById("tampilHarga").style.display = "block";
+    }
+
+    function bukaHalamanFaktur() {
+        let semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        const data = semua[kodeSaya];
+        currentStep = 7;
+        updateProgress();
+        showContent();
+        isiDataFaktur(data);
+    }
+
+    function pilihMetode(element, nama) {
+        metodeBayar = nama;
+        document.querySelectorAll("#step-6 .metode-item").forEach(el => el.classList.remove("terpilih"));
+        element.classList.add("terpilih");
+        document.getElementById("metodeDipilih").textContent = nama;
+
+        const rek = dataRekening[nama];
+        document.getElementById("noRek").textContent = rek.no;
+        document.getElementById("namaBank").textContent = rek.bank;
+        document.getElementById("infoRekening").style.display = nama === "Tunai" ? "none" : "block";
+    }
+
+    function konfirmasiBayar() {
+        if(!metodeBayar) return alert("Pilih metode pembayaran pelunasan!");
+        let semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        semua[kodeSaya].metodePembayaran = metodeBayar;
+        semua[kodeSaya].pembayaranDikonfirmasi = true;
+        localStorage.setItem("daftarPesanan", JSON.stringify(semua));
+        alert("✅ Pelunasan berhasil dikonfirmasi. Menunggu verifikasi admin.");
+        cekStatus();
+    }
+
+    function isiDataFaktur(data) {
+        if(!data) return;
+
+        if (data.status === "ditolak_pelanggan") {
+            document.getElementById("txtKeteranganSelesai").innerHTML = "<strong style='color:#ef4444;'>PESANAN DIBATALKAN</strong><br>Anda menolak pengajuan biaya tambahan dari teknisi.";
+            document.getElementById("txtGaransiLabel").style.display = "none";
+            document.getElementById("btnUnduhPDF").style.display = "none";
+            document.getElementById("txtFakturNote").innerHTML = "<span style='color:#dc2626; font-weight:bold;'>Pembatalan pengerjaan membuat Uang DP hangus.</span>";
+            
+            document.getElementById("noFaktur").textContent = "CAN-" + kodeSaya;
+            document.getElementById("fakturKode").textContent = kodeSaya;
+            document.getElementById("fakturNama").textContent = data.nama;
+            document.getElementById("fakturTanggal").textContent = new Date().toLocaleString("id-ID");
+            document.getElementById("fakturLayanan").textContent = data.layanan + " (Dibatalkan)";
+            document.getElementById("fakturPokok").textContent = "Rp 0";
+            document.getElementById("fakturRowTambahan").style.display = "none";
+            document.getElementById("fakturMetode").textContent = "Tidak Ada Pelunasan";
+            document.getElementById("fakturTotal").textContent = "Rp 50.000 (DP Hangus)";
+            return;
+        }
+
+        document.getElementById("txtGaransiLabel").style.display = "block";
+        document.getElementById("btnUnduhPDF").style.display = "block";
+        document.getElementById("txtFakturNote").textContent = "Terima kasih atas kepercayaan Anda kepada kami";
+
+        document.getElementById("noFaktur").textContent = "INV-" + kodeSaya;
+        document.getElementById("fakturKode").textContent = kodeSaya;
+        document.getElementById("fakturNama").textContent = data.nama;
+        document.getElementById("fakturTanggal").textContent = new Date().toLocaleString("id-ID");
+        document.getElementById("fakturLayanan").textContent = data.layanan;
+        document.getElementById("fakturPokok").textContent = "Rp " + (data.biayaSuku + data.biayaJasa).toLocaleString("id-ID");
+        
+        let tambahan = (data.adaKerusakanTambahan && data.statusPersetujuanTambahan === "disetujui") ? data.biayaSukuTambahan : 0;
+        if(tambahan > 0) {
+            document.getElementById("fakturTambahanBiaya").textContent = "Rp " + tambahan.toLocaleString("id-ID");
+            document.getElementById("fakturRowTambahan").style.display = "flex";
+        } else {
+            document.getElementById("fakturRowTambahan").style.display = "none";
+        }
+
+        document.getElementById("fakturMetode").textContent = data.metodePembayaran;
+        document.getElementById("fakturTotal").textContent = "Rp " + (data.biayaSuku + data.biayaJasa + tambahan).toLocaleString("id-ID");
+    }
+
+    // Fungsi unduh PDF disesuaikan agar membaca data tipe teks manual
+    function unduhPDF() {
+        if (typeof window.jspdf === "undefined") {
+            alert("⏳ Memuat fitur PDF, silakan coba lagi...");
+            return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "bold");
+        doc.text("FAKTUR PEMBAYARAN SERVIS HP", 105, 20, { align: "center" });
+        doc.setLineWidth(0.5);
+        doc.line(20, 28, 190, 28);
+
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.text(`No. Faktur: ${document.getElementById("noFaktur").textContent}`, 20, 40);
+        doc.text(`Kode Pesanan: ${kodeSaya}`, 20, 48);
+        doc.text(`Nama Pelanggan: ${document.getElementById("fakturNama").textContent}`, 20, 56);
+        doc.text(`Layanan: ${document.getElementById("fakturLayanan").textContent}`, 20, 68);
+        doc.text(`Biaya Pokok: ${document.getElementById("fakturPokok").textContent}`, 20, 76);
+        
+        let yPos = 84;
+        let semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+        const data = semua[kodeSaya];
+        if(data && data.adaKerusakanTambahan && data.statusPersetujuanTambahan === "disetujui") {
+            doc.text(`Biaya Tambahan: Rp ${data.biayaSukuTambahan.toLocaleString("id-ID")} (${data.infoKerusakanTambahan})`, 20, yPos);
+            yPos += 8;
+        }
+
+        doc.text(`Uang Muka (DP): Rp 50.000 (Lunas)`, 20, yPos);
+        doc.text(`Metode Pelunasan: ${document.getElementById("fakturMetode").textContent}`, 20, yPos + 8);
+
+        doc.setFontSize(13);
+        doc.setFont("helvetica", "bold");
+        doc.text(`TOTAL KESELURUHAN: ${document.getElementById("fakturTotal").textContent}`, 20, yPos + 20);
+        doc.save(`Faktur_${kodeSaya}.pdf`);
+    }
+
+    function aktifkanSistemChat() {
+        document.getElementById("txtChatKode").textContent = kodeSaya;
+        document.getElementById("chatWidgetPelanggan").style.display = "block";
+        muatLogPesan();
+    }
+
+    function kirimChat(role) {
+        const inp = document.getElementById("inputPesanPelanggan");
+        const teks = inp.value.trim();
+        if(!teks || !kodeSaya) return;
+
+        let chatData = JSON.parse(localStorage.getItem("chatLog_" + kodeSaya) || "[]");
+        chatData.push({ pengirim: role, teks: teks, waktu: new Date().toLocaleTimeString() });
+        localStorage.setItem("chatLog_" + kodeSaya, JSON.stringify(chatData));
+        
+        inp.value = "";
+        muatLogPesan();
+    }
+
+    function aksiEnterChat(e, role) {
+        if(e.key === 'Enter') kirimChat(role);
+    }
+
+    function muatLogPesan() {
+        if(!kodeSaya) return;
+        const box = document.getElementById("boxPesanPelanggan");
+        let chatData = JSON.parse(localStorage.getItem("chatLog_" + kodeSaya) || "[]");
+        
+        let htmlStr = "";
+        chatData.forEach(msg => {
+            let kelasBubble = msg.pengirim === 'admin' ? 'msg-admin' : 'msg-user';
+            let labelNama = msg.pengirim === 'admin' ? '👨‍💻 Admin' : '📱 Anda';
+            htmlStr += `<div class="msg-bubble ${kelasBubble}"><strong>${labelNama}:</strong><br>${msg.teks}<br><span style="font-size:0.7rem; opacity:0.6;">${msg.waktu}</span></div>`;
+        });
+        
+        if(box.innerHTML !== htmlStr) {
+            box.innerHTML = htmlStr;
+            box.scrollTop = box.scrollHeight;
+        }
+    }
+
+    function kembaliKeAwal() {
+        localStorage.removeItem("kodeAktifPelanggan");
+
+        currentStep = 1; kodeSaya = ""; metodeBayar = ""; metodeDP = ""; fileDataURL = ""; tipeFile = "";
+        document.querySelectorAll("input, textarea, select").forEach(el => el.value = "");
+        document.querySelectorAll("input[type=checkbox]").forEach(el => el.checked = false);
+        document.querySelectorAll(".metode-item").forEach(el => el.classList.remove("terpilih"));
+        document.getElementById("pratinjauFile").innerHTML = "Belum ada file dipilih";
+        document.getElementById("tampilKondisiHP").innerHTML = "Belum tersedia";
+        document.getElementById("infoRekening").style.display = "none";
+        document.getElementById("infoRekeningDP").style.display = "none";
+        document.getElementById("infoValidasiDP").style.display = "none";
+        document.getElementById("infoValidasi").style.display = "none";
+        document.getElementById("chatWidgetPelanggan").style.display = "none";
+        document.getElementById("btnKonfirmasiDP").disabled = false;
+        document.getElementById("btnKonfirmasiDP").innerText = "Konfirmasi Bayar DP";
+        document.getElementById("btnKonfirmasi").disabled = false;
+        document.getElementById("btnKonfirmasi").innerText = "Konfirmasi Pembayaran";
+        document.getElementById("tampilHarga").style.display = "none";
+        document.getElementById("tampilJadwal").style.display = "none";
+        document.getElementById("infoJadwal").style.display = "block";
+        updateProgress(); showContent();
+    }
+
+    function inisialisasiSesiPage() {
+        if (kodeSaya) {
+            let semua = JSON.parse(localStorage.getItem("daftarPesanan") || "{}");
+            if (semua[kodeSaya]) {
+                document.getElementById("kodePesananDP").textContent = kodeSaya;
+                document.getElementById("kodePesanan").textContent = kodeSaya;
+                aktifkanSistemChat();
+                cekStatus();
+            } else {
+                localStorage.removeItem("kodeAktifPelanggan");
+                kodeSaya = "";
+            }
+        }
+    }
+
+    setInterval(cekStatus, 3000);
+    window.addEventListener("DOMContentLoaded", inisialisasiSesiPage);
+
+</script>
+</body>
+</html>
